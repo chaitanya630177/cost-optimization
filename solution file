@@ -1,0 +1,63 @@
+tiered data storage with cold archive in azure blob storage.
+
+Split your data into hot (recent) and cold (archived) storage:
+Hot Tier (Cosmos DB): Retain only the last 3 months of billing records.
+Cold Tier (Azure Blob Storage): Archive older records to Azure Blob in a cost-effective format like JSON or Parquet.
+Access Layer (Proxy Logic via Azure Functions): Intercept read requests; if data is not found in Cosmos DB, fetch from blob storage.
+
+1.Introduce an Archival Job (Azure Function + Timer Trigger)
+Goal: Move records older than 3 months from Cosmos DB to Blob storage.
+      Timer-triggered Azure Function (runs daily/weekly).
+      Queries Cosmos DB for records older than 3 months.
+      Exports data as JSON or Parquet files.
+      Uploads to Azure Blob Storage (Cool or Archive Tier for lowest cost).
+      Deletes archived records from Cosmos DB after successful storage.
+      Use Azure Data Factory instead of Function if data size is very large.
+
+2. Modify Read Logic with a Dual-Source Lookup
+Goal: Serve records from Blob when missing in Cosmos DB.
+      Wrap your current read logic in a middleware Azure Function or microservice.
+      First, query Cosmos DB.
+If not found, then:
+       Construct blob path using a known key format (e.g., billingRecordId/year/month).
+       Read the JSON/Parquet blob from Azure Blob Storage.
+       Return result as if from Cosmos DB (same API schema).
+       Response latency remains within a few seconds due to Blob read speed.
+
+3.Optional: Cache Archived Records
+  Use Azure Redis Cache to cache frequently accessed archived records temporarily.
+  Avoid repeated Blob Storage lookups for the same old records.
+
+4. Storage Structure in Blob
+   Organize blobs for efficient lookup and future scalability:
+   Use Azure Data Lake Gen2 hierarchical namespace for better performance if needed.
+
+5. Monitoring & Fail-Safes
+   Log archival success/failure in Azure Monitor.
+   Alert on archival or fetch failures.
+   Use ETags or record status flags to prevent double-deletion.
+
+  
+Requirement                              How It’s Fulfilled
+
+Simplicity:                              Azure Function + Blob + Cosmos DB: all serverless, managed services.
+
+No Data Loss:                            Archival job ensures success before deletion.
+
+No Downtime:                             Gradual migration. New read logic seamlessly serves from both sources.
+
+No API Contract Change:                  Read/write endpoints stay the same. Read proxy abstracts dual-source logic.
+
+Cost Optimization:                       Cosmos DB size and RUs reduced. Blob storage (Cool/Archive) is 10x cheaper.
+
+
+Optional Enhancements:
+
+Compress JSON files to reduce Blob storage size.
+Use Event Grid to trigger real-time sync if required.
+Add metadata indexing (e.g., Azure Table Storage) for faster blob lookup if scale grows.
+
+
+
+
+
