@@ -57,7 +57,7 @@ Compress JSON files to reduce Blob storage size.
 Use Event Grid to trigger real-time sync if required.
 Add metadata indexing (e.g., Azure Table Storage) for faster blob lookup if scale grows.
 
-![Image](https://github.com/user-attachments/assets/ee1f2c6c-3b11-4f9d-8d8d-ad5a5c5e6440)
+
 
 
 
