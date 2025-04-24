@@ -58,6 +58,6 @@ Use Event Grid to trigger real-time sync if required.
 Add metadata indexing (e.g., Azure Table Storage) for faster blob lookup if scale grows.
 
 
-![Image](https://github.com/user-attachments/assets/a5d38356-26be-42bd-8cd1-e17f8d52b7cc)
+
 
 
